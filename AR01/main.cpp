@@ -8,26 +8,23 @@
 // Macro for indexing vertex buffer
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
+#define NUM_IMAGES_TO_CALIBRATE 15
+#define FRAMES_TO_WAIT 5
+
 using namespace std;
 using namespace cv;
 
 int width = 800;
 int height = 600;
 
-Texture* earthTexture;
-Texture* playerTexture;
-Texture* moonTexture;
 Texture* sunTexture;
 
 Shader* shader;
 Shader* nonDiffuseShader;
 Shader* nonTextureShader;
-Shader* skyBoxShader;
 Shader* textShader;
 Shader* cameraShader;
 
-Object* earth;
-Object* moon;
 Object* sun;
 
 // Direction that the camera is towarding
@@ -92,43 +89,24 @@ GLint currProgram;
 Mat frame;
 
 bool cameraCalibraded = false;
-
-mat4 updateCamera() {
-	// Camera rotation control
-	mat4 view = translate(identity_mat4(), vec3(0, 0, -500.0));
-
-	if (cameraCalibraded) {
-		view = identity_mat4();
-		for (int i = 0; i < rMat.rows; i++)
-		{
-			for (int j = 0; j < rMat.cols; j++)
-			{
-				view.m[j * 4 + i] = rMat.at<double>(i, j);
-			}
-		}
-		
-		view.m[12] =  tvec.at<double>(0, 0);
-		view.m[13] =  tvec.at<double>(1, 0);
-		view.m[14] =  tvec.at<double>(2, 0);
-	}
-
-	mat4 convertOpenCV2OpenGL = identity_mat4();
-	convertOpenCV2OpenGL.m[5] = -1;
-	convertOpenCV2OpenGL.m[10] = -1;
-
-	return convertOpenCV2OpenGL * view;
-}
+int wait = 0;
 
 bool cameraCalibration(Mat frame) {
 	Size boardSize(9, 6); //interior number of corners
-	float squareSize = 5;
+	float squareSize = 1;
+	
 	Mat gray = frame.clone(); //source image
 	cvtColor(frame, gray, CV_BGR2GRAY);
 	vector<Point2f> tmp;
 
+	if (wait != 0) {
+		wait = wait < 0 ? 0 : wait - 1;
+		return false;
+	}
+
 	bool patternfound = findChessboardCorners(gray, boardSize, tmp,
-		CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE
-		+ CALIB_CB_FAST_CHECK);
+		CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE +
+		CALIB_CB_FILTER_QUADS + CALIB_CB_FAST_CHECK);
 
 	if (!cameraCalibraded) {
 		if (patternfound) {
@@ -142,9 +120,10 @@ bool cameraCalibration(Mat frame) {
 					objectPoints.back().push_back(Point3f(float(j*squareSize), float(i*squareSize), 0));
 
 			drawChessboardCorners(frame, boardSize, Mat(imagePoints.back()), patternfound);
+			wait = FRAMES_TO_WAIT;
 		}
 
-		if (imagePoints.size() > 15) {
+		if (imagePoints.size() > NUM_IMAGES_TO_CALIBRATE) {
 			cameraMatrix = Mat::eye(3, 3, CV_64F);
 
 			distCoeffs = Mat::zeros(8, 1, CV_64F);
@@ -202,36 +181,37 @@ mat4 generateFrustrumWithCamera(float nearf, float farf) {
 			Rt.at<double>(y, x) = expandedR.at<double>(y, x);
 		}
 	}
-	Rt.at<double>(0, 3) = tvec.at<double>(0, 0);
-	Rt.at<double>(1, 3) = tvec.at<double>(1, 0);
+
+	Rt.at<double>(0, 3) = -tvec.at<double>(0, 0) - 1;
+	Rt.at<double>(1, 3) = -tvec.at<double>(1, 0) - 1;
 	Rt.at<double>(2, 3) = tvec.at<double>(2, 0);
 
 	Rt.at<double>(3, 3) = 1.0;
 
-	//OpenGL has reversed Y & Z coords
-	Mat reverseYZ = Mat::eye(4, 4, CV_64FC1);
-	reverseYZ.at<double>(1, 1) = reverseYZ.at<double>(0,0) = reverseYZ.at<double>(2, 2) = -1;
+	Mat invertAxis = Mat::eye(Size(4,4), CV_64FC1 );
+	invertAxis.at<double>(2, 2) = -1;
+	invertAxis.at<double>(1, 1) = -1;
+	invertAxis.at<double>(0, 0) = -1;
 
-	//since we are in landscape mode
-	Mat rot2D = Mat::eye(4, 4, CV_64FC1);
-	rot2D.at<double>(0, 0) = rot2D.at<double>(1, 1) = 0;
-	rot2D.at<double>(0, 1) = 1;
-	rot2D.at<double>(1, 0) = -1;
+	Rt = invertAxis * Rt;
+
+	float left, right, top, bottom;
+	right = (width - cameraMatrix.at<double>(0, 2))*nearf/ (cameraMatrix.at<double>(0,0) );
+	left = -cameraMatrix.at<double>(0, 2)*nearf / (cameraMatrix.at<double>(0, 0));
+	top = (height - cameraMatrix.at<double>(1, 2))*nearf / (cameraMatrix.at<double>(1, 1));
+	bottom = (-cameraMatrix.at<double>(1, 2))*nearf / (cameraMatrix.at<double>(1, 1));
 
 	Mat projMat = Mat::zeros(4, 4, CV_64FC1);
-	projMat.at<double>(0, 0) = 2 * cameraMatrix.at<double>(0, 0) / imageWidth;
-	projMat.at<double>(0, 2) = -1 + (2 * cameraMatrix.at<double>(0, 2) / imageWidth);
-	projMat.at<double>(1, 1) = 2 * cameraMatrix.at<double>(1, 1) / imageHeight;
-	projMat.at<double>(1, 2) = -1 + (2 * cameraMatrix.at<double>(1, 2) / imageHeight);
+	projMat.at<double>(0, 0) = 2 * nearf / (right - left);
+	projMat.at<double>(0, 2) = (right + left) / (right - left);
+	projMat.at<double>(1, 1) = 2 * nearf / (top - bottom);
+	projMat.at<double>(1, 2) = (top + bottom) / (top - bottom);
 	projMat.at<double>(2, 2) = -(farf + nearf) / (farf - nearf);
 	projMat.at<double>(2, 3) = -2 * farf*nearf / (farf - nearf);
 	projMat.at<double>(3, 2) = -1;
 
-	Mat mvMat = reverseYZ * Rt;
-	//projMat = rot2D * projMat;
-
 	mat4 result = identity_mat4();
-	Mat mvp = projMat * mvMat;
+	Mat mvp = projMat * Rt;
 
 	for (int i = 0; i < mvp.rows; i++)
 	{
@@ -252,23 +232,22 @@ void display() {
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glGetIntegerv(GL_CURRENT_PROGRAM, &currProgram);
-
 	glDepthMask(GL_FALSE);
 	cap >> frame;
 	bool found = false;
 	if (!frame.empty()) {
-		// Camera Calibration
-		found = cameraCalibration(frame);
-
 		// Flips the frame as the opencv give us the image inverted
 		flip(frame, frame, -1);
+
+		// Camera Calibration
+		found = cameraCalibration(frame);
+		
+		glUseProgram(postProcessingShader->getProgramID());
 		// Bind the texture to the image
 		glBindTexture(GL_TEXTURE_2D, mTexture);
 		glEnable(GL_TEXTURE_2D);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame.cols, frame.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, frame.data);
 
-		//glUseProgram(cameraShader->getProgramID());
 		// Draw a Polygon with the texture
 		glBegin(GL_POLYGON);
 		glTexCoord2f(0.0f, 0.0f); glVertex3f(1.0f, 1.0f, 1000.0f);
@@ -276,6 +255,8 @@ void display() {
 		glTexCoord2f(1.0f, 1.0f); glVertex3f(-1.0f, -1.0f, 1000.0f);
 		glTexCoord2f(0.0f, 1.0f); glVertex3f(1.0f, -1.0f, 1000.0f);
 		glEnd();
+
+		glFlush();
 
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
@@ -286,26 +267,25 @@ void display() {
 
 	glDepthMask(GL_TRUE);
 	
+	stringstream text;
+	if (!cameraCalibraded) {
+		text << "Calibrating Camera: " << imagePoints.size() << "/" << NUM_IMAGES_TO_CALIBRATE;
+	}
+	else {
+		text << "Camera Calibrated";
+	}
+	
+	drawText(20, 20, text.str());
+
+
 	if (cameraCalibraded && found) {
-		mat4 mvp = generateFrustrumWithCamera(5, 1000);
-		//moon->rotate(0, 0.6f, 0);
-		//earth->rotate(0, 0.5f, 0);
-		//sun->rotate(0, 1.0f, 0);
+		mat4 mvp = generateFrustrumWithCamera(0.1, 5000);
+		sun->rotate(0, 1.0f, 0);
 		sun->display(mvp);
 	}
 
-	glUseProgram(currProgram);
-	
 	glutSwapBuffers();
 }
-
-
-
-void initCamera() {
-	cap = VideoCapture(0);
-	cap.set(CAP_PROP_FPS, 60.0);
-}
-
 
 void init()
 {
@@ -317,109 +297,36 @@ void init()
 	nonTextureShader = new Shader("Shaders/simpleVertexShader.hlsl", "Shaders/nonTextureFragmentShader.hlsl");
 
 	textShader = new Shader("Shaders/identityVertexShader.hlsl", "Shaders/identityFragmentShader.hlsl");
-	skyBoxShader = new Shader("Shaders/skyBoxVertexShader.hlsl", "Shaders/skyBoxFragmentShader.hlsl");
 
-	cameraShader = new Shader("Shaders/cameraVertexShader.hlsl", "Shaders/cameraFragmentShader.hlsl");
 	postProcessingShader = new Shader("Shaders/postprocessingVertex.hlsl", "Shaders/postprocessingFragment.hlsl");
 	cout << "Shaders finished loading." << endl;
 
 	// Instantiate the textures
-	earthTexture = new Texture("models/Earth_Diffuse.jpg");
-	moonTexture = new Texture("models/moonmap2k.jpg");
 	sunTexture = new Texture("models/sun.jpg");
-	playerTexture = new Texture("models/Maps/zqw1b.jpg");
 
 	//initializating the texture mapping
 	glGenTextures(1, &mTexture);
 	glBindTexture(GL_TEXTURE_2D, mTexture);
 	glEnable(GL_TEXTURE_2D);
-	//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-	//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 
 	cout << "Textures finished loading." << endl;
 
 	// Instantitate the objects
-	earth = new Object(nonTextureShader, "models/Earth.obj", earthTexture);
-	moon = new Object(nonTextureShader, "models/Earth.obj", moonTexture);
-	sun = new Object(nonTextureShader, "models/Earth.obj", sunTexture);
+	sun = new Object(nonDiffuseShader, "models/Earth.obj", sunTexture);
 	cout << "Objects finished loading." << endl;
 
 	// Doing initial transformations
-	//sun->scaleAll(10);
-	earth->rotate(0.0, 0.0, 180.0);
-	earth->move(50.0, 0.0, 100.0);
-	earth->scaleAll(0.5);
-
-	moon->scaleAll(0.1);
-	moon->move(75.0f, 0, 0.0f);
-
-	earth->addChild(moon);
-	sun->addChild(earth);
+	//sun->move(5.0,10.0, 0.0);
+	sun->scaleAll(0.025);
 
 	cout << "Finished initialization" << endl;
-	
-	initCamera();
-
-	/* init_resources */
-	/* Create back-buffer, used for post-processing */
-
-	// Post processing config
-	GLchar* attribute_name = "v_coord";
-	attribute_v_coord_postproc = glGetAttribLocation(postProcessingShader->getProgramID(), attribute_name);
-	if (attribute_v_coord_postproc == -1) {
-		fprintf(stderr, "Could not bind attribute %s\n", attribute_name);
-	}
-
-	GLchar* uniform_name = "fbo_texture";
-	uniform_fbo_texture = glGetUniformLocation(postProcessingShader->getProgramID(), uniform_name);
-	if (uniform_fbo_texture == -1) {
-		fprintf(stderr, "Could not bind uniform %s\n", uniform_name);
-	}
-
-	/* init_resources */
-	GLfloat fbo_vertices[] = {
-		-1, -1,
-		1, -1,
-		-1,  1,
-		1,  1,
-	};
-	glGenBuffers(1, &vbo_fbo_vertices);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_fbo_vertices);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(fbo_vertices), fbo_vertices, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	/* Texture */
-	glActiveTexture(GL_TEXTURE0);
-	glGenTextures(1, &fbo_texture);
-	glBindTexture(GL_TEXTURE_2D, fbo_texture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	/* Depth buffer */
-	glGenRenderbuffers(1, &rbo_depth);
-	glBindRenderbuffer(GL_RENDERBUFFER, rbo_depth);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-	/* Framebuffer to link everything together */
-	glGenFramebuffers(1, &fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_texture, 0);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo_depth);
-	GLenum status;
-	if ((status = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE) {
-		fprintf(stderr, "glCheckFramebufferStatus: error %p", status);
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void updateScene() {
@@ -438,9 +345,15 @@ void exit() {
 
 int main(int argc, char** argv) {
 	// Set up the window
+	cap = VideoCapture(0);
+	cap.set(CAP_PROP_FPS, 60.0);
+	cap >> frame;
+	width  = frame.size().width;
+	height = frame.size().height;
+
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
-	glutInitWindowSize(width, height);
+	glutInitWindowSize(frame.size().width, frame.size().height);
 	glutCreateWindow("Space Jam");
 
 	// Tell glut where the display function is

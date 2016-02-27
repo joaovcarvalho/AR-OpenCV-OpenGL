@@ -1,0 +1,870 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass extarticle
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Augmented Reality Assignment01
+\end_layout
+
+\begin_layout Author
+Author: Joao Vitor Elias Carvalho | Student Number: 15309326
+\end_layout
+
+\begin_layout Date
+2015/2016 Hilary Term - CS7434 - Trinity College Dublin
+\end_layout
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Subsection
+Goal
+\end_layout
+
+\begin_layout Standard
+The goal of this application is to implement a simple Augmented Reality
+ experiment.
+ The final result must be a visualization of a 3D model in a real ambient
+ captured by a camera.
+ The object must be projected on a planar surface marked using some kind
+ of marker.
+ The object should move and be correctly oriented with the plane.
+ It's necessary to calibrate the camera before augmenting its images with
+ the 3D model.
+\end_layout
+
+\begin_layout Subsection
+Problem to be solved
+\end_layout
+
+\begin_layout Standard
+When approaching this problem we need to think about the camera model we
+ are dealing with.
+ We need to understand the process involved when the camera takes a picture
+ of the world.
+ We are dealing with a transformation from the 3D point ( position of the
+ object in the world) to a 2D ( image pixel ).
+\end_layout
+
+\begin_layout Standard
+We have a relation between the 2D point, that we going to denote as 
+\begin_inset Formula $p$
+\end_inset
+
+ , and the 3D point, that we going to denote as 
+\begin_inset Formula $P$
+\end_inset
+
+.
+ In this case we know that the following relationship holds with 
+\begin_inset Formula $P$
+\end_inset
+
+ and 
+\begin_inset Formula $p$
+\end_inset
+
+ as follow:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+p=C*P
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In which C is the matrix that converts the 3D point in the world frame to
+ the 2D point camera frame.
+ Also we have a non-linear operation to project the 3D to 2D.
+ We are going to define what this transformation is supposed to do and derive
+ its components.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+P=\begin{bmatrix}X\\
+Y\\
+Z
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+p=\begin{bmatrix}x\\
+y
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+With the definition of P and p we can think about the process of the camera
+ taking a picture.
+ In theory this process works by projecting the rays through a hole in a
+ lightproof box and the rays are going to be projected in the back of the
+ box as shown below.
+ This is the idea behind the pinhole camera.
+\end_layout
+
+\begin_layout Standard
+\noindent
+\align center
+\begin_inset Graphics
+	filename pasted2.png
+	scale 200
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+So we need to calculate the relation between a 3D point and 2D in this camera.
+ We can, hypothetically, bring the image plane to the front of the pinhole
+ and the model still is equivalent.
+ So below we have the representation of this idea: 
+\end_layout
+
+\begin_layout Standard
+\noindent
+\align center
+\begin_inset Graphics
+	filename C:/Users/joaov/Dropbox/Capturas de tela/Screenshot 2016-02-25 09.57.43.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+By similarity of triangles we can get the following relationships between
+ the P and p.
+ In this case f is the distance to the optical center and the principal
+ point ( or the image plane ).
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+x=f*\frac{{X}}{Z}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+y=f*\frac{Y}{Z}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This operation is a non-linear operation, but using homogeneous coordinate
+ we can define it as a linear operation because when we have a homogeneous
+ representation we can assume that:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+p=\lambda*p_{h}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In other words we say that the normal representation is equal to the homogeneous
+ representation multiplied with a certain lambda.This lambda is (1/z), we
+ are going to have a step, that we are going to call it as projection step,
+ that we do the non-linear part.
+ In this case we have the following relationship:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\lambda*p_{h}=\begin{bmatrix}f & 0 & 0 & 0\\
+0 & f & 0 & 0\\
+0 & 0 & 1 & 0
+\end{bmatrix}*P
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+p=proj(p_{h})
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Besides that we need to convert from the image measurement to the pixel
+ based measurement.
+ As the origin of the image pixels are in the top-left corner and the origin
+ of the image may be in any point we need a operation to do this:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\begin{bmatrix}x_{pixel}\\
+y_{pixel}\\
+1
+\end{bmatrix}=\begin{bmatrix}-1/s_{x} & 0 & o_{x}\\
+0 & -1/s_{y} & o_{y}\\
+0 & 0 & 1
+\end{bmatrix}\begin{bmatrix}x\\
+y\\
+1
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Where Sx and Sy are the pixel size and Ox and Oy is where the center of
+ the view is located within the image.
+ Summarizing the operations we formulate so far we have:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\begin{bmatrix}x\\
+y\\
+1
+\end{bmatrix}=\begin{bmatrix}-1/s_{x} & 0 & o_{x}\\
+0 & -1/s_{y} & o_{y}\\
+0 & 0 & 1
+\end{bmatrix}\begin{bmatrix}f & 0 & 0 & 0\\
+0 & f & 0 & 0\\
+0 & 0 & 1 & 0
+\end{bmatrix}\begin{bmatrix}R & T\\
+0 & 1
+\end{bmatrix}\begin{bmatrix}X\\
+Y\\
+Z\\
+1
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\begin{bmatrix}x\\
+y\\
+1
+\end{bmatrix}=K\begin{bmatrix}R & T\\
+0 & 1
+\end{bmatrix}\begin{bmatrix}X\\
+Y\\
+Z
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The RT matrix is used to rotate and translate the camera, so it holds informatio
+n about the orientation and position of the camera in the space.
+ The RT matrix is also know as the extrinsic matrix as it holds information
+ of the world around the camera.
+ The K matrix is called intrinsic matrix and it holds information about
+ how the camera works( field of view, aperture, etc.).
+ The RT and K matrix is what is known as the Camera Matrix.
+\end_layout
+
+\begin_layout Standard
+This is the point we are going to start.
+ Our problem is given a certain camera and a certain pattern detection we
+ need to extract the K matrix and the RT matrix so we can render our 3D
+ model.
+ So we define our problem as follow:
+\end_layout
+
+\begin_layout Standard
+Input: 
+\begin_inset Formula $P,p$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Output: 
+\begin_inset Formula $C=K*RT$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This is known as 
+\series bold
+camera calibration
+\series default
+.
+\end_layout
+
+\begin_layout Subsection
+Pipeline
+\end_layout
+
+\begin_layout Standard
+The approach used was to use the following technologies: C++ as main programming
+ language,OpenCV as computer vision library, OpenGL as the graphical library
+ and GLEW/FreeGLUT for the integration of the C++ application with the OpenGL.
+ We are going to use the chessboard as marker for identification of the
+ plane which the object that is going to be projected.
+ The image used for identification is the following.
+\end_layout
+
+\begin_layout Paragraph
+The Pipeline
+\end_layout
+
+\begin_layout Standard
+The pipeline used for the implementation was the following:
+\end_layout
+
+\begin_layout Standard
+- Get the camera and store N frames when the chessboard is detected.
+\end_layout
+
+\begin_layout Standard
+- Use the N frames to calibrate the camera and get the camera intrinsic
+ matrix.
+\end_layout
+
+\begin_layout Standard
+- Now use every frame to get the extrinsic matrix using the intrinsic matrix
+ and the detected chessboard.
+\end_layout
+
+\begin_layout Standard
+- Convert the rotation vector to a rotation matrix using the Rodrigues operation.
+\end_layout
+
+\begin_layout Standard
+- Generate the frustrum projection matrix and RT ( Rotation and Translation)
+ matrix using the rotation matrix,translated vector and intrinsic matrix.
+\end_layout
+
+\begin_layout Standard
+- Generate a polygon and use the frame as texture to it.
+ Render it on the OpenGL screen.
+\end_layout
+
+\begin_layout Standard
+- Render the model using the projection and RT matrix as Model-View-Projection
+ matrix to the OpenGL screen in front of the polygon holding the frame as
+ texture.
+\end_layout
+
+\begin_layout Subsection
+Challenges
+\end_layout
+
+\begin_layout Standard
+The challenges of the project are:
+\end_layout
+
+\begin_layout Standard
+- Detection of the markers
+\end_layout
+
+\begin_layout Standard
+- Calibration of the camera and finding intrinsic matrix.
+\end_layout
+
+\begin_layout Standard
+- Finding the extrinsic matrix using correspondences of points.
+\end_layout
+
+\begin_layout Standard
+- Finding the Model-View-Projection matrix using the extrinsic and intrinsic
+ matrices.
+\end_layout
+
+\begin_layout Standard
+- Sending the MVP matrix to the graphics pipeline and rendering the 3D model
+ correctly.
+\end_layout
+
+\begin_layout Standard
+Others kinds of challenges that I faced were: 
+\end_layout
+
+\begin_layout Standard
+- Integration of the computer vision library with the computer graphics
+ library.
+\end_layout
+
+\begin_layout Section
+Approach
+\end_layout
+
+\begin_layout Subsection
+Image Capturing and Marker Detection
+\end_layout
+
+\begin_layout Standard
+Initially the capturing of the camera was used with the help of the OpenCV
+ class of VideoCapture.
+ The result is a Mat object with the frame information.
+ I'm using the webcam from my notebook so the device id is always zero.
+\end_layout
+
+\begin_layout Standard
+A Chessboard, as showed in the image, was used because of its regular pattern
+ that can be easily detected.
+ The detection of the chessboard works by applying a binary threshold filter,
+ get the connected components ( or contours as in OpenCV ), for each countour
+ it checks the aspect size and box size ( as given by the minimum rect area
+ ).
+\end_layout
+
+\begin_layout Standard
+\noindent
+\align center
+\begin_inset Graphics
+	filename pasted1.png
+	scale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This is going to let us know if the chessboard is present in the scene and
+ where are the positions of the corners in the image.
+ We are going to use theses images to calibrate the camera and calculate
+ the extrinsic matrix.
+ So when the chessboard is present we store this image in an array of images
+ that we are going to use to calibrate.
+\end_layout
+
+\begin_layout Subsection
+Camera Calibration
+\end_layout
+
+\begin_layout Standard
+Using the images found in the step 1.1 we can calibrate the camera.
+ This process works by trying to solve for the Camera matrix in the following
+ equation:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+p=C*P
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In our case we have the points of the chessboard from the image and we can
+ generate a set of 3D points for the chessboard by knowing how many squares
+ we have and giving a certain size to them.
+ Is important to give them a Z coordinate as well, in this case because
+ it's a plane, we can set the z coordinate to be 0 to all points.
+\end_layout
+
+\begin_layout Standard
+We can modify our equation so the C is a vector instead of a matrix and
+ P is a matrix as follow:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\setcounter{MaxMatrixCols}{20}\begin{bmatrix}X & Y & Z & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+0 & 0 & 0 & 0 & X & Y & Z & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & X & Y & Z & 1 & 0 & 0 & 0 & 0
+\end{bmatrix}*\begin{bmatrix}C_{11}\\
+C_{12}\\
+C_{13}\\
+C_{14}\\
+C_{21}\\
+C_{22}\\
+C_{23}\\
+C_{24}\\
+C_{31}\\
+C_{32}\\
+C_{33}\\
+C_{34}
+\end{bmatrix}=\begin{bmatrix}x\\
+y\\
+z
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This equations is equivalent to the equation that relates P, C and p.
+ If we continue to add rows in the first matrix with the data from the images,
+ as well as the result vector, we will have a linear system that we can
+ solve to find C.
+ We can solve the linear system by using methods like the 
+\series bold
+Gaussian Elimination.
+
+\series default
+ That way we can find all the components of C.
+\end_layout
+
+\begin_layout Standard
+Next we will need to find the extrinsic and intrinsic matrix.
+ This can be done by doing a QR decomposition we can separate the two matrices
+ that are composing C, K and RT.
+ After doing the decomposition K is the upper triangular matrix and R is
+ the orthogonal matrix.
+\end_layout
+
+\begin_layout Standard
+This is one way to find the Camera matrix.
+ The way actually implemented in the OpenCV library, as stated by Bouquet
+\begin_inset CommandInset citation
+LatexCommand cite
+key "key-1"
+
+\end_inset
+
+ as great inspiration, is to use: a closed-form solution, followed by a
+ nonlinear refinement based on the maximum likelihood criterion as described
+ by Zhang
+\begin_inset CommandInset citation
+LatexCommand cite
+key "key-2"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+In the implementation this all is accomplish by the calibrateCamera function
+ of the OpenCV library.
+ This functions receives as parameters the following:
+\end_layout
+
+\begin_layout Standard
+- objectPoints: vector<vector<Point3f>> formed by the P vectors, the 3D
+ correspondent of the elements.
+\end_layout
+
+\begin_layout Standard
+- imagePoints: vector<vector<Point2f>> formed by the p vectors, the points
+ found by the identification of the chessboard.
+\end_layout
+
+\begin_layout Standard
+- imageSize: Size object representing the size of the image.
+\end_layout
+
+\begin_layout Standard
+- cameraMatrix: result Matrix that is going to be outputted the result.
+\end_layout
+
+\begin_layout Standard
+- distCoeffs: result of the function for finding the distortions.
+\end_layout
+
+\begin_layout Standard
+- rvecs: vector of vectors representing the rotation of the camera.
+\end_layout
+
+\begin_layout Standard
+- tvecs: Output vector of translation vectors estimated for each pattern
+ view.
+\end_layout
+
+\begin_layout Standard
+- flags: Used to modify the behavior of the function.
+\end_layout
+
+\begin_layout Subsection
+Finding the Extrinsic Matrix
+\end_layout
+
+\begin_layout Standard
+In the last step we have found both the intrinsic matrix and the extrinsic
+ matrix.
+ We have calibrated the camera and now we need to get every frame and find
+ the rotation and translations vectors.
+ With this we can mount the RT matrix to be passed to OpenGL.
+\end_layout
+
+\begin_layout Subsection
+Generating the Frustrum Matrix
+\end_layout
+
+\begin_layout Standard
+Now that we have both the intrinsic matrix and the RT matrix we can generate
+ the right perspective and view for the 3D model.
+ We are going to use the frustrum matrix as our perspective matrix and use
+ the parameters from the intrinsic matrix to use.
+ The RT matrix is going to be used as view matrix.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+Persp=\begin{bmatrix}\frac{2*near}{right-left} & 0 & \frac{right+left}{right-left} & 0\\
+0 & \frac{2*near}{top-bottom} & \frac{top+bottom}{top-bottom} & 0\\
+0 & 0 & -\frac{far+near}{far-near} & -\frac{2*far*near}{far-near}\\
+0 & 0 & -1 & 0
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We are going to define the 
+\begin_inset Formula $right,left,top,bottom$
+\end_inset
+
+ parameters as well as the far and near.
+ For this we need to understand what each parameter of the intrinsic matrix
+ means.
+ The right and left parameters are interval of the x coordinate in the near
+ clipping plane.
+ The top and bottom parameters are the same for the y coordinate as shown
+ in the image below:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename pasted3.png
+	scale 200
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Our intrinsic matrix give us the distance between the image plane and the
+ camera origin both in the x axis and y axis.
+ With this we can derive the following relationship:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\frac{right}{near}=\frac{width_{image}-C_{x}}{fx}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\frac{left}{near}=\frac{-C_{x}}{fx}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Similarly we can define the top and bottom parameters.
+ That way we can define our perspective projection.
+\end_layout
+
+\begin_layout Subsection
+Using the frame as a texture and rendering in the OpenGL screen
+\end_layout
+
+\begin_layout Standard
+In order to display the image and the 3D model we need to render it in some
+ way.
+ I decided to render the frame and the 3D in the OpenGL pipeline and screen.
+ My idea was to generate a simple plane to use as medium to display the
+ frame and render the 3D model in front of it.
+ I used the frame data as a texture to the plane.
+ Also I temporally disabled the z-buffer test before rendering the plane
+ so the 3D model is always in front of it.
+ I used a simple shader to render the plane.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename C:/Users/joaov/Dropbox/Capturas de tela/Screenshot 2016-02-27 12.30.00.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Rendering the 3D model
+\end_layout
+
+\begin_layout Standard
+Finally I used the Assimp Library to load the 3D model from a .obj file.
+ With the data from the model I filled the vertex buffer.
+ Also I used a texture in order to improve the graphics and to be more easily
+ distinguishable the rotations.
+ The 3D model is a ___.
+ 
+\end_layout
+
+\begin_layout Section
+Evaluation
+\end_layout
+
+\begin_layout Section
+Conclusion
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "key-1"
+
+\end_inset
+
+http://www.vision.caltech.edu/bouguetj/calib_doc/htmls/links.html
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "key-2"
+
+\end_inset
+
+http://research.microsoft.com/~zhang/Calib/
+\end_layout
+
+\end_body
+\end_document

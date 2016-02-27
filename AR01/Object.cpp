@@ -403,10 +403,20 @@ void Object::display(mat4 mvp) {
 	int view_mat_location = glGetUniformLocation(shaderProgramID, "view");
 	int proj_mat_location = glGetUniformLocation(shaderProgramID, "proj");
 
+	this->model = identity_mat4();
+
+	this->model = scale(this->model, this->scaleVec);
+
+	this->model = rotate_z_deg(this->model, rotation.v[2]);
+	this->model = rotate_y_deg(this->model, rotation.v[1]);
+	this->model = rotate_x_deg(this->model, rotation.v[0]);
+
+	this->model = translate(this->model, position);
+
 	// update uniforms & draw
 	glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, mvp.m);
 	glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, identity_mat4().m);
-	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, identity_mat4().m);
+	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, this->model.m);
 
 	glDrawArrays(GL_TRIANGLES, 0, this->vertexCounter);
 }

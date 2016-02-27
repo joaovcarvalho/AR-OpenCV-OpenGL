@@ -2,7 +2,7 @@
 \lyxformat 474
 \begin_document
 \begin_header
-\textclass extarticle
+\textclass article
 \use_default_options true
 \maintain_unincluded_children false
 \language english
@@ -195,7 +195,7 @@ With the definition of P and p we can think about the process of the camera
 \align center
 \begin_inset Graphics
 	filename pasted2.png
-	scale 200
+	scale 150
 
 \end_inset
 
@@ -292,6 +292,20 @@ In other words we say that the normal representation is equal to the homogeneous
 \begin_inset Formula 
 \[
 p=proj(p_{h})
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+p=\begin{bmatrix}x/z\\
+y/z\\
+1
+\end{bmatrix}
 \]
 
 \end_inset
@@ -645,12 +659,44 @@ Next we will need to find the extrinsic and intrinsic matrix.
 \begin_layout Standard
 This is one way to find the Camera matrix.
  The way actually implemented in the OpenCV library, as stated by Bouquet
+\begin_inset CommandInset citation
+LatexCommand cite
+key "key-1"
+
+\end_inset
+
  as great inspiration, is to use: a closed-form solution, followed by a
  nonlinear refinement based on the maximum likelihood criterion as described
  by Zhang
 \begin_inset CommandInset citation
 LatexCommand cite
-key "key-1"
+key "key-2"
+
+\end_inset
+
+.
+ Bouquet said that: 
+\begin_inset Quotes eld
+\end_inset
+
+The main initialization phase has been partially inspired from that paper.
+ The initial estimation of the planar homographies is identical to that
+ presented in that paper.
+ The closed-form estimation of the internal parameters from the homographies
+ is slightly different (we explicitly use orthogonality of vanishing points),
+ and we do not estimate the distortion coefficients at the initialization
+ phase (we found that step unnecessary in practice).
+ The final Maximum Likelihood estimation is identical.
+ Minor difference: we use the intrinsic model presented by Heikkil and Silven
+ including two extra distortion coefficients corresponding to tangential
+ distortion.
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "key-3"
 
 \end_inset
 
@@ -708,6 +754,27 @@ In the last step we have found both the intrinsic matrix and the extrinsic
  We have calibrated the camera and now we need to get every frame and find
  the rotation and translations vectors.
  With this we can mount the RT matrix to be passed to OpenGL.
+ We are going to use the solvePnP function from OpenGL that follows the
+ same method as the calibration function, only it only calculates the rotation
+ vector and translation vector already knowing the intrinsic matrix.
+ With this we use the Rodrigues method to get the rotation matrix.
+ We use the rotation matrix and the translation vector to create the view
+ matrix as follows:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+view=\begin{bmatrix}R_{11} & R_{12} & R_{13} & T_{x}\\
+R_{21} & R_{22} & R_{23} & T_{y}\\
+R_{31} & R_{32} & R_{33} & T_{z}\\
+0 & 0 & 0 & 1
+\end{bmatrix}
+\]
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection
@@ -752,9 +819,11 @@ We are going to define the
 \end_layout
 
 \begin_layout Standard
+\noindent
+\align center
 \begin_inset Graphics
 	filename pasted3.png
-	scale 200
+	scale 150
 
 \end_inset
 
@@ -813,6 +882,7 @@ In order to display the image and the 3D model we need to render it in some
 \begin_layout Standard
 \begin_inset Graphics
 	filename C:/Users/joaov/Dropbox/Capturas de tela/Screenshot 2016-02-27 12.30.00.png
+	scale 40
 
 \end_inset
 
@@ -826,18 +896,127 @@ Rendering the 3D model
 \begin_layout Standard
 Finally I used the Assimp Library to load the 3D model from a .obj file.
  With the data from the model I filled the vertex buffer.
- Also I used a texture in order to improve the graphics and to be more easily
- distinguishable the rotations.
- The 3D model is a ___.
- 
+ Also I used a texture in order to improve the graphics and to more easily
+ distinguish the rotations.
+ The 3D model is a sphere with the texture of the sun.
 \end_layout
 
 \begin_layout Section
+Evaluation and Results
+\end_layout
+
+\begin_layout Subsection
+Results
+\end_layout
+
+\begin_layout Standard
+The results were good after a series of complications with the integration
+ of the libraries.
+ I had some major problems with Visual Studio, OpenCV and OpenGL to integrate
+ all together.
+ After that most of the steps went okay.
+ You can see some of the results below:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename C:/Users/joaov/Dropbox/Capturas de tela/Screenshot 2016-02-27 13.03.47.png
+	scale 35
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename C:/Users/joaov/Dropbox/Capturas de tela/Screenshot 2016-02-27 13.03.22.png
+	scale 35
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename C:/Users/joaov/Dropbox/Capturas de tela/Screenshot 2016-02-27 12.59.39.png
+	scale 35
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename C:/Users/joaov/Dropbox/Capturas de tela/Screenshot 2016-02-27 13.03.01.png
+	scale 35
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
 Evaluation
+\end_layout
+
+\begin_layout Standard
+The initial tests were made using an tablet showing the grid of the chessboard.
+ The results using this method were poor due the light emitted from the
+ tablet.
+ This made the detection of the chessboard worse because of lower contrast
+ caused by light emitted.
+ Still you can use the tablet and get sufficient results to test your applicatio
+n, but I would recommend printing the grid for the testing.
+\end_layout
+
+\begin_layout Standard
+Other great tip is to wait a certain number of frames between acquiring
+ the images for the calibration.
+ This allow you to move the camera more and get different samples of the
+ chessboard for the calibration.
+ This improves the calibration significantly.
+ A simple counter that is restarted every time you store an image is enough.
 \end_layout
 
 \begin_layout Section
 Conclusion
+\end_layout
+
+\begin_layout Standard
+In the end I was able to augment the scene with the 3D model.
+ The choose of using the OpenCV library enabled me to easily implement the
+ camera calibration and solve for the extrinsic and intrinsic matrix.
+ The results were okay given that is a simple augmented reality application.
+\end_layout
+
+\begin_layout Standard
+The practical application of the content enabled me to test my knowledge
+ and find out where I was lacking more understanding.
+ I got stuck in transforming the intrinsic matrix into the perspective matrix
+ for a while.
+ Also I had major problems with the configuration of the OpenCV and OpenGL
+ libraries on my computer.
+ After much digging I discovered that I was using the wrong version of the
+ compiled OpenCV library, so you should be careful to that.
+ If you are using Visual Studio be sure to know what plataform toolset you
+ need for OpenCV, Glew/Freeglut and OpenGL.
+\end_layout
+
+\begin_layout Subsection
+Future works and Improvements
+\end_layout
+
+\begin_layout Standard
+Still much can be done to improve performance in this program.
+ Effectively we can use a better method for finding the chessboard grid
+ using some kind of tracking method, because the chessboard is not going
+ to change much between frames.
+ Applying some mip mapping can help with the aliasing in the texture.
+ It needed to figure out a method for antialiasing between the frame and
+ the 3D model.
+\end_layout
+
+\begin_layout Standard
+In the sense of new features we can create a full model of the solar system
+ to be used in a educational environment and maybe use other kinds of markers
+ to generate a interface to the user interact with it.
 \end_layout
 
 \begin_layout Bibliography
@@ -858,6 +1037,16 @@ key "key-2"
 \end_inset
 
 http://research.microsoft.com/~zhang/Calib/
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "key-3"
+
+\end_inset
+
+http://www.vision.caltech.edu/bouguetj/calib_doc/htmls/ref.html
 \end_layout
 
 \end_body

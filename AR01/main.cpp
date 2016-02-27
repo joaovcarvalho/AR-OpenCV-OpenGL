@@ -182,9 +182,9 @@ mat4 generateFrustrumWithCamera(float nearf, float farf) {
 		}
 	}
 
-	Rt.at<double>(0, 3) = -tvec.at<double>(0, 0) - 1;
+	Rt.at<double>(0, 3) = -tvec.at<double>(0, 0) + 4;
 	Rt.at<double>(1, 3) = -tvec.at<double>(1, 0) - 1;
-	Rt.at<double>(2, 3) = tvec.at<double>(2, 0);
+	Rt.at<double>(2, 3) = tvec.at<double>(2, 0) + 4;
 
 	Rt.at<double>(3, 3) = 1.0;
 

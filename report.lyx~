@@ -102,6 +102,104 @@ The goal of this application is to implement a simple Augmented Reality
 \end_layout
 
 \begin_layout Subsection
+Pipeline/Brief Approach
+\end_layout
+
+\begin_layout Standard
+The approach used was to use the following technologies: C++ as main programming
+ language,OpenCV as computer vision library, OpenGL as the graphical library
+ and GLEW/FreeGLUT for the integration of the C++ application with the OpenGL.
+ We are going to use the chessboard as marker for identification of the
+ plane, which the 3D model is going to be projected above.
+\end_layout
+
+\begin_layout Paragraph
+The Pipeline
+\end_layout
+
+\begin_layout Standard
+The pipeline used for the implementation, which is going to be explain in
+ detail later, was the following:
+\end_layout
+
+\begin_layout Standard
+- Get the camera and store N frames when the chessboard is detected.
+\end_layout
+
+\begin_layout Standard
+- Use the N frames to calibrate the camera and get the camera intrinsic
+ matrix.
+\end_layout
+
+\begin_layout Standard
+- Now use every frame to get the extrinsic matrix using the intrinsic matrix
+ and the detected chessboard.
+\end_layout
+
+\begin_layout Standard
+- Convert the rotation vector to a rotation matrix using the Rodrigues operation.
+\end_layout
+
+\begin_layout Standard
+- Generate the frustrum projection matrix and RT ( Rotation and Translation)
+ matrix using the rotation matrix,translated vector and intrinsic matrix.
+\end_layout
+
+\begin_layout Standard
+- Generate a polygon and use the frame as texture to it.
+ Render it on the OpenGL screen.
+\end_layout
+
+\begin_layout Standard
+- Render the model using the projection and RT matrix as Model-View-Projection
+ matrix to the OpenGL screen in front of the polygon holding the frame as
+ texture.
+\end_layout
+
+\begin_layout Subsection
+Challenges
+\end_layout
+
+\begin_layout Standard
+The challenges of the project are:
+\end_layout
+
+\begin_layout Standard
+- Detection of the markers
+\end_layout
+
+\begin_layout Standard
+- Calibration of the camera and finding intrinsic matrix.
+\end_layout
+
+\begin_layout Standard
+- Finding the extrinsic matrix using correspondences of points.
+\end_layout
+
+\begin_layout Standard
+- Finding the Model-View-Projection matrix using the extrinsic and intrinsic
+ matrices.
+\end_layout
+
+\begin_layout Standard
+- Sending the MVP matrix to the graphics pipeline and rendering the 3D model
+ correctly.
+\end_layout
+
+\begin_layout Standard
+Others kinds of challenges that I faced were: 
+\end_layout
+
+\begin_layout Standard
+- Integration of the computer vision library with the computer graphics
+ library.
+\end_layout
+
+\begin_layout Section
+Approach
+\end_layout
+
+\begin_layout Subsection
 Problem to be solved
 \end_layout
 
@@ -111,7 +209,8 @@ When approaching this problem we need to think about the camera model we
  We need to understand the process involved when the camera takes a picture
  of the world.
  We are dealing with a transformation from the 3D point ( position of the
- object in the world) to a 2D ( image pixel ).
+ object in the world) to a 2D point ( image pixel ) that is made by the
+ camera.
 \end_layout
 
 \begin_layout Standard
@@ -187,7 +286,7 @@ With the definition of P and p we can think about the process of the camera
  In theory this process works by projecting the rays through a hole in a
  lightproof box and the rays are going to be projected in the back of the
  box as shown below.
- This is the idea behind the pinhole camera.
+ This is the idea behind the pinhole camera used in the modern cameras.
 \end_layout
 
 \begin_layout Standard
@@ -214,6 +313,7 @@ So we need to calculate the relation between a 3D point and 2D in this camera.
 \align center
 \begin_inset Graphics
 	filename C:/Users/joaov/Dropbox/Capturas de tela/Screenshot 2016-02-25 09.57.43.png
+	scale 80
 
 \end_inset
 
@@ -394,7 +494,7 @@ Z
 \begin_layout Standard
 The RT matrix is used to rotate and translate the camera, so it holds informatio
 n about the orientation and position of the camera in the space.
- The RT matrix is also know as the extrinsic matrix as it holds information
+ The RT matrix is also known as the extrinsic matrix as it holds information
  of the world around the camera.
  The K matrix is called intrinsic matrix and it holds information about
  how the camera works( field of view, aperture, etc.).
@@ -434,104 +534,6 @@ camera calibration
 \end_layout
 
 \begin_layout Subsection
-Pipeline
-\end_layout
-
-\begin_layout Standard
-The approach used was to use the following technologies: C++ as main programming
- language,OpenCV as computer vision library, OpenGL as the graphical library
- and GLEW/FreeGLUT for the integration of the C++ application with the OpenGL.
- We are going to use the chessboard as marker for identification of the
- plane which the object that is going to be projected.
- The image used for identification is the following.
-\end_layout
-
-\begin_layout Paragraph
-The Pipeline
-\end_layout
-
-\begin_layout Standard
-The pipeline used for the implementation was the following:
-\end_layout
-
-\begin_layout Standard
-- Get the camera and store N frames when the chessboard is detected.
-\end_layout
-
-\begin_layout Standard
-- Use the N frames to calibrate the camera and get the camera intrinsic
- matrix.
-\end_layout
-
-\begin_layout Standard
-- Now use every frame to get the extrinsic matrix using the intrinsic matrix
- and the detected chessboard.
-\end_layout
-
-\begin_layout Standard
-- Convert the rotation vector to a rotation matrix using the Rodrigues operation.
-\end_layout
-
-\begin_layout Standard
-- Generate the frustrum projection matrix and RT ( Rotation and Translation)
- matrix using the rotation matrix,translated vector and intrinsic matrix.
-\end_layout
-
-\begin_layout Standard
-- Generate a polygon and use the frame as texture to it.
- Render it on the OpenGL screen.
-\end_layout
-
-\begin_layout Standard
-- Render the model using the projection and RT matrix as Model-View-Projection
- matrix to the OpenGL screen in front of the polygon holding the frame as
- texture.
-\end_layout
-
-\begin_layout Subsection
-Challenges
-\end_layout
-
-\begin_layout Standard
-The challenges of the project are:
-\end_layout
-
-\begin_layout Standard
-- Detection of the markers
-\end_layout
-
-\begin_layout Standard
-- Calibration of the camera and finding intrinsic matrix.
-\end_layout
-
-\begin_layout Standard
-- Finding the extrinsic matrix using correspondences of points.
-\end_layout
-
-\begin_layout Standard
-- Finding the Model-View-Projection matrix using the extrinsic and intrinsic
- matrices.
-\end_layout
-
-\begin_layout Standard
-- Sending the MVP matrix to the graphics pipeline and rendering the 3D model
- correctly.
-\end_layout
-
-\begin_layout Standard
-Others kinds of challenges that I faced were: 
-\end_layout
-
-\begin_layout Standard
-- Integration of the computer vision library with the computer graphics
- library.
-\end_layout
-
-\begin_layout Section
-Approach
-\end_layout
-
-\begin_layout Subsection
 Image Capturing and Marker Detection
 \end_layout
 
@@ -549,6 +551,8 @@ A Chessboard, as showed in the image, was used because of its regular pattern
  get the connected components ( or contours as in OpenCV ), for each countour
  it checks the aspect size and box size ( as given by the minimum rect area
  ).
+ This is methods that the chessboard detection is composed of, but I could
+ not find more information on why it works and how exactly is done.
 \end_layout
 
 \begin_layout Standard
@@ -568,7 +572,7 @@ This is going to let us know if the chessboard is present in the scene and
  where are the positions of the corners in the image.
  We are going to use theses images to calibrate the camera and calculate
  the extrinsic matrix.
- So when the chessboard is present we store this image in an array of images
+ So when the chessboard is present, we store this image in an array of images
  that we are going to use to calibrate.
 \end_layout
 
@@ -597,8 +601,11 @@ p=C*P
 In our case we have the points of the chessboard from the image and we can
  generate a set of 3D points for the chessboard by knowing how many squares
  we have and giving a certain size to them.
- Is important to give them a Z coordinate as well, in this case because
- it's a plane, we can set the z coordinate to be 0 to all points.
+ It is important to give them a Z coordinate as well.
+ In this case because it's a plane, we can set the z coordinate to be 0
+ to all points.
+ We are considering one of the points to be the origin and the others to
+ stay in the plane where z is equal 0.
 \end_layout
 
 \begin_layout Standard
@@ -665,9 +672,8 @@ key "key-1"
 
 \end_inset
 
- as great inspiration, is to use: a closed-form solution, followed by a
- nonlinear refinement based on the maximum likelihood criterion as described
- by Zhang
+, is to use: a closed-form solution, followed by a nonlinear refinement
+ based on the maximum likelihood criterion as described by Zhang
 \begin_inset CommandInset citation
 LatexCommand cite
 key "key-2"
@@ -754,7 +760,7 @@ In the last step we have found both the intrinsic matrix and the extrinsic
  We have calibrated the camera and now we need to get every frame and find
  the rotation and translations vectors.
  With this we can mount the RT matrix to be passed to OpenGL.
- We are going to use the solvePnP function from OpenGL that follows the
+ We are going to use the solvePnP function from OpenCV that follows the
  same method as the calibration function, only it only calculates the rotation
  vector and translation vector already knowing the intrinsic matrix.
  With this we use the Rodrigues method to get the rotation matrix.
@@ -860,7 +866,10 @@ Our intrinsic matrix give us the distance between the image plane and the
 
 \begin_layout Standard
 Similarly we can define the top and bottom parameters.
- That way we can define our perspective projection.
+ This way we can define our perspective projection.
+ The near and far are chosen easily by placing a low near and a great far.
+ This values are arbitrary but you need to consider the size of the board
+ to know the distance from the camera to it and not occlude the 3D model.
 \end_layout
 
 \begin_layout Subsection
@@ -870,13 +879,15 @@ Using the frame as a texture and rendering in the OpenGL screen
 \begin_layout Standard
 In order to display the image and the 3D model we need to render it in some
  way.
- I decided to render the frame and the 3D in the OpenGL pipeline and screen.
+ I decided to render the frame and the 3D model in the OpenGL pipeline and
+ screen.
  My idea was to generate a simple plane to use as medium to display the
  frame and render the 3D model in front of it.
  I used the frame data as a texture to the plane.
  Also I temporally disabled the z-buffer test before rendering the plane
  so the 3D model is always in front of it.
  I used a simple shader to render the plane.
+ More can be found on the source code of the project.
 \end_layout
 
 \begin_layout Standard
@@ -899,6 +910,10 @@ Finally I used the Assimp Library to load the 3D model from a .obj file.
  Also I used a texture in order to improve the graphics and to more easily
  distinguish the rotations.
  The 3D model is a sphere with the texture of the sun.
+ I render it using a simple shader using texture and receive a MVP matrix
+ as parameter.
+ Every vector is multiplied by the matrix in order to get the final position.
+ No illumination model was used in order to keep it simple.
 \end_layout
 
 \begin_layout Section
@@ -910,11 +925,11 @@ Results
 \end_layout
 
 \begin_layout Standard
-The results were good after a series of complications with the integration
+The results were good, after a series of complications with the integration
  of the libraries.
  I had some major problems with Visual Studio, OpenCV and OpenGL to integrate
  all together.
- After that most of the steps went okay.
+ After that, most of the steps went okay.
  You can see some of the results below:
 \end_layout
 
@@ -973,6 +988,13 @@ Other great tip is to wait a certain number of frames between acquiring
  chessboard for the calibration.
  This improves the calibration significantly.
  A simple counter that is restarted every time you store an image is enough.
+\end_layout
+
+\begin_layout Standard
+After much experimenting with the number of frames that we use for the camera
+ calibration, I realized that 15 is the best number to use.
+ It doesn't take much time to calibrate and give us good results.
+ This is a arbitrary value and no special reason to use it.
 \end_layout
 
 \begin_layout Section

@@ -182,9 +182,9 @@ mat4 generateFrustrumWithCamera(float nearf, float farf) {
 		}
 	}
 
-	Rt.at<double>(0, 3) = -tvec.at<double>(0, 0) + 4;
-	Rt.at<double>(1, 3) = -tvec.at<double>(1, 0) - 1;
-	Rt.at<double>(2, 3) = tvec.at<double>(2, 0) + 4;
+	Rt.at<double>(0, 3) = -tvec.at<double>(0, 0);
+	Rt.at<double>(1, 3) = -tvec.at<double>(1, 0);
+	Rt.at<double>(2, 3) = tvec.at<double>(2, 0) ;
 
 	Rt.at<double>(3, 3) = 1.0;
 
@@ -280,7 +280,7 @@ void display() {
 
 	if (cameraCalibraded && found) {
 		mat4 mvp = generateFrustrumWithCamera(0.1, 5000);
-		sun->rotate(0, 1.0f, 0);
+		//sun->rotate(0, 1.0f, 0);
 		sun->display(mvp);
 	}
 
@@ -319,7 +319,7 @@ void init()
 	cout << "Textures finished loading." << endl;
 
 	// Instantitate the objects
-	sun = new Object(nonDiffuseShader, "models/Earth.obj", sunTexture);
+	sun = new Object(nonDiffuseShader, "models/space_frigate.obj", sunTexture);
 	cout << "Objects finished loading." << endl;
 
 	// Doing initial transformations

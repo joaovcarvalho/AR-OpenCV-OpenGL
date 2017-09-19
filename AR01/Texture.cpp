@@ -22,6 +22,7 @@ Texture::Texture(const char* fileName)
 }
 
 void Texture::Bind(unsigned int unit) {
+  std::cout << "hello world" << std::endl;
 	assert(unit >= 0 && unit <= 31);
 
 	glActiveTexture(GL_TEXTURE0 + unit);
